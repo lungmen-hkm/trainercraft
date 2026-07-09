@@ -1,4 +1,4 @@
-package com.previx.trainercraft.app_bridge
+package com.previx.trainercraft
 
 import io.flutter.embedding.android.FlutterActivity
 
