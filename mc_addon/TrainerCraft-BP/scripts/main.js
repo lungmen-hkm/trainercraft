@@ -1,24 +1,21 @@
 import { world, system } from "@minecraft/server";
 import { http, HttpRequestMethod } from "@minecraft/server-net";
 
-// ⚠️ GANTI pake IP Address HP Redmi lu yang dapet dari Wi-Fi (Misal: 192.168.1.5)
 const SERVER_URL = "http://127.0.0.1:8080/"; 
 
 system.runInterval(async () => {
-    // Ambil semua player yang ada di world
     const players = world.getAllPlayers();
     if (players.length === 0) return;
-    const player = players[0]; // Targetin player utama (lu sendiri)
+    const player = players[0];
 
     try {
-        // Tembak request GET ke server shelf di HP
+        // Request GET ke server shelf
         const response = await http.request({
             uri: SERVER_URL,
             method: HttpRequestMethod.Get
         });
 
         if (response.status === 200) {
-            // Ubah text body response jadi angka
             const speedKmh = parseFloat(response.body);
             
             // Kalau lu gowes di atas 3 km/jam, paksa karakter maju relatif ke depan

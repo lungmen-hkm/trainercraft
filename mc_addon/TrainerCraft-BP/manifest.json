@@ -3,7 +3,7 @@
   "header": {
     "description": "TrainerCraft Speed Bridge Add-on",
     "name": "TrainerCraft BP",
-    "uuid": "tulis-uuid-bebas-di-sini-1111",
+    "uuid": "6840-1728",
     "version": [1, 0, 0],
     "min_engine_version": [1, 20, 0]
   },
@@ -12,7 +12,7 @@
       "description": "Script module",
       "type": "script",
       "language": "javascript",
-      "uuid": "tulis-uuid-bebas-di-sini-2222",
+      "uuid": "6840-1728",
       "version": [1, 0, 0],
       "entry": "scripts/main.js"
     }
