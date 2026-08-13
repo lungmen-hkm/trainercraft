@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
 bool _isMinecraftInstalled = false;
 bool _isScanningBle = false; // Buat nandain status scanning di UI
 bool _isBleTimeout = false;
+double _topSpeedKmh = 0.0; // Tempat nyimpen rekor top speed
   @override
   void initState() {
     super.initState();
@@ -144,36 +145,47 @@ void _showTireSizeDialog(BuildContext context) {
   }
 
   void _mulaiLatihan() async {
-    setState(() {
-      _isScanningBle = true; 
-      _isBleTimeout = false; // Reset status tiap mulai nyari baru
-    });
+  setState(() {
+    _isScanningBle = true; 
+    _isBleTimeout = false;
+    _topSpeedKmh = 0.0; // Reset top speed tiap mulai latihan baru
+  });
 
-    try {
-      await _bleService.connectToSensor(
-        () { if (mounted) setState(() {}); }, // Callback data
-        () async { // Callback sukses konek
-          await _serverService.startServer(() => _bleService.currentSpeedKmh);
-          if (mounted) {
-            setState(() {
-              _isScanningBle = false; 
-              _isServerRunning = true;
-            });
-          }
-        },
-        () { // Callback TIMEOUT (Dipanggil kalau waktu abis)
-          if (mounted) {
-            setState(() {
-              _isScanningBle = false; // Matikan loading muter-muter
-              _isBleTimeout = true;   // Nyalain teks timeout
-            });
-          }
+  try {
+    await _bleService.connectToSensor(
+      () {
+        // Callback tiap ada update data speed baru
+        if (mounted) {
+          setState(() {
+            // Update top speed kalau speed sekarang lebih kenceng dari rekor sebelumnya
+            if (_bleService.currentSpeedKmh > _topSpeedKmh) {
+              _topSpeedKmh = _bleService.currentSpeedKmh;
+            }
+          });
         }
-      );
-    } catch (e) {
-      setState(() { _isScanningBle = false; });
-    }
+      },
+      () async {
+        await _serverService.startServer(() => _bleService.currentSpeedKmh);
+        if (mounted) {
+          setState(() {
+            _isScanningBle = false; 
+            _isServerRunning = true;
+          });
+        }
+      },
+      () {
+        if (mounted) {
+          setState(() {
+            _isScanningBle = false; 
+            _isBleTimeout = true;   
+          });
+        }
+      }
+    );
+  } catch (e) {
+    setState(() { _isScanningBle = false; });
   }
+  } 
 
   // Fungsi bungkus untuk toggle nyala/mati (Bisa buat restart juga)
   void _handleServiceButton() {
@@ -245,12 +257,37 @@ _isScanningBle
               style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold),
             ),
           )
-        : _buildStatusCard(
+        : _buildStatusCardWithWidget(
             icon: Icons.speed,
             title: "Real-time Speed",
-            value: "${_bleService.currentSpeedKmh.toStringAsFixed(1)} km/h",
-            textColor: Colors.blueAccent,
-          ),
+            widget: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "${_bleService.currentSpeedKmh.toStringAsFixed(1)} km/h",
+                  style: const TextStyle(
+                    color: Colors.blueAccent, 
+                    fontSize: 22, 
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+                const SizedBox(height: 4),
+      // Text Top Speed Kecil di Bawahnya
+                Row(
+                  children: [
+                    const Icon(Icons.navigation_rounded, size: 12, color: Colors.orangeAccent),
+                    const SizedBox(width: 4),
+                Text(
+                  "Top: ${_topSpeedKmh.toStringAsFixed(1)} km/h",
+                  style: TextStyle(
+                  color: Colors.white.withOpacity(0.6), 
+                  fontSize: 11, 
+                  fontWeight: FontWeight.w500
+                  )
+                )
+              ],
+            )
+        ]),
 
           // 4. PEMILIH UKURAN BAN (Hijau/Tombol)
           _buildActionButton(
@@ -279,7 +316,8 @@ _isScanningBle
               _launchMinecraft();
             },
           ),
-        ],
+      )
+      ],
       ),
     ),
   );
@@ -314,7 +352,15 @@ Widget _buildStatusCard({required IconData icon, required String title, required
 }
 
 // Helper untuk Kotak Tombol (Hijau - Clickable)
-Widget _buildActionButton({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+Widget _buildActionButton(
+  {
+    required IconData icon, 
+    required String label, 
+    required Color color, 
+    required VoidCallback onTap
+  }
+    )
+    {
   return InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
@@ -358,7 +404,7 @@ Widget _buildStatusCardWithWidget({required IconData icon, required String title
           Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11)),
           const SizedBox(height: 6),
           // Widget custom (loading bar + teks scanning) bakal ngebakar di sini
-          widget, 
+          widget 
         ],
       ),
     ),
