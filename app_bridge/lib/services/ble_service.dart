@@ -12,6 +12,7 @@ class BleService {
   double circumference = 2.105; // Default awal tetep 700x25c
   double currentSpeedKmh = 0.0;
   bool isConnectedToSensor = false;
+  Timer? _speedTimeoutTimer;
 
   final String cscServiceUuid = "1816";
   final String cscMeasurementCharUuid = "2a5b";
@@ -148,30 +149,59 @@ class BleService {
 
   // Fungsi asli buat sensor sepeda beneran nanti
   void decodeCscData(List<int> value) {
-    if (value.isEmpty) return;
-    int flags = value[0];
-    bool hasWheelData = (flags & 0x01) != 0;
+  if (value.isEmpty) return;
 
-    if (hasWheelData && value.length >= 7) {
-      int wheelRevolutions = value[1] | (value[2] << 8) | (value[3] << 16) | (value[4] << 24);
-      int wheelEventTime = value[5] | (value[6] << 8);
+  final int flags = value[0];
+  final bool hasWheelData = (flags & 0x01) != 0;
 
-      if (_lastWheelRevolutions != null && _lastWheelEventTime != null) {
-        int deltaRotations = wheelRevolutions - _lastWheelRevolutions!;
-        int deltaEventTime = wheelEventTime - _lastWheelEventTime!;
+  if (!hasWheelData || value.length < 7) return;
 
-        if (deltaEventTime < 0) deltaEventTime += 65535;
+  final int wheelRevolutions =
+      value[1] |
+      (value[2] << 8) |
+      (value[3] << 16) |
+      (value[4] << 24);
 
-        if (deltaRotations > 0 && deltaEventTime > 0) {
-          double timeInSeconds = deltaEventTime / 1024.0;
-          
-          // Di sini dia bakal otomatis pake nilai 'circumference' dinamis yang lu set dari UI
-          double speedMps = (deltaRotations * circumference) / timeInSeconds;
-          currentSpeedKmh = speedMps * 3.6;
-        }
-      }
-      _lastWheelRevolutions = wheelRevolutions;
-      _lastWheelEventTime = wheelEventTime;
+  final int wheelEventTime =
+      value[5] |
+      (value[6] << 8);
+
+  if (_lastWheelRevolutions != null &&
+      _lastWheelEventTime != null) {
+    
+    int deltaRotations =
+        wheelRevolutions - _lastWheelRevolutions!;
+
+    int deltaEventTime =
+        wheelEventTime - _lastWheelEventTime!;
+
+    // CSC event time adalah 16-bit, jadi rollover = 65536
+    if (deltaEventTime < 0) {
+      deltaEventTime += 65536;
+    }
+
+    if (deltaRotations > 0 && deltaEventTime > 0) {
+      final double timeInSeconds =
+          deltaEventTime / 1024.0;
+
+      final double speedMps =
+          (deltaRotations * circumference) / timeInSeconds;
+
+      currentSpeedKmh = speedMps * 3.6;
     }
   }
+
+  _lastWheelRevolutions = wheelRevolutions;
+  _lastWheelEventTime = wheelEventTime;
+
+  // Reset timer setiap kali wheel event diterima.
+  _speedTimeoutTimer?.cancel();
+
+  _speedTimeoutTimer = Timer(
+    const Duration(seconds: 1),
+    () {
+      currentSpeedKmh = 0.0;
+    },
+  );
+}
 }

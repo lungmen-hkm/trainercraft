@@ -5,11 +5,11 @@ from bluez_peripheral.gatt.characteristic import characteristic, CharacteristicF
 from bluez_peripheral.advert import Advertisement
 from bluez_peripheral.util import Adapter, get_message_bus
 
-# Global variables buat ngontrol simulasi
-TARGET_SPEED_KMH = 20.0  # Kecepatan awal (20 km/jam)
-WHEEL_CIRCUMFERENCE_METERS = 2.096  # Ukuran Ban 700x25c (sesuai app lu!)
+# Global variables
+TARGET_SPEED_KMH = 20.0  # Kecepatan awal
+WHEEL_CIRCUMFERENCE_METERS = 2.096  # 700x25c
 WHEEL_REVOLUTIONS = 0
-LAST_WHEEL_TIME_UNIT = 0  # Dalam unit 1/1024 detik (standar BLE CSC)
+LAST_WHEEL_TIME_UNIT = 0  # Unit 1/1024 detik
 
 class CSCService(Service):
     def __init__(self):
@@ -20,11 +20,6 @@ class CSCService(Service):
         global WHEEL_REVOLUTIONS, LAST_WHEEL_TIME_UNIT
         
         flags = 0x01  # Flag: Wheel Revolution Data Present
-        
-        # Format byte sesuai spesifikasi Bluetooth SIG CSC Measurement:
-        # Byte 0: Flags
-        # Byte 1-4: Cumulative Wheel Revolutions (uint32)
-        # Byte 5-6: Last Wheel Event Time (uint16, 1/1024s)
         return bytes([
             flags,
             WHEEL_REVOLUTIONS & 0xFF, 
@@ -35,46 +30,55 @@ class CSCService(Service):
             (LAST_WHEEL_TIME_UNIT >> 8) & 0xFF
         ])
 
-
 async def update_simulation_data(service):
-    """ Loop background buat ngitung putaran roda sesuai TARGET_SPEED_KMH """
+    """ Loop background dengan Accumulation Precision untuk 0-30 km/h """
     global WHEEL_REVOLUTIONS, LAST_WHEEL_TIME_UNIT, TARGET_SPEED_KMH
     
-    interval = 0.5  # Kirim notification tiap 0.5 detik
+    interval = 0.2  # 200ms (5Hz) biar responsif dan UI Flutter mulus banget
+    rev_accumulator = 0.0  # Nyimpen pecahan rotasi biar gak ilang gara-gara int()
     
     while True:
         await asyncio.sleep(interval)
         
         if TARGET_SPEED_KMH > 0:
-            # Hitung meter per detik: (km/h * 1000) / 3600
+            # 1. Hitung meter per detik
             speed_mps = (TARGET_SPEED_KMH * 1000.0) / 3600.0
             
-            # Hitung rotasi roda
+            # 2. Hitung penambahan rotasi pecahan
             distance_covered = speed_mps * interval
             revs_inc = distance_covered / WHEEL_CIRCUMFERENCE_METERS
             
-            WHEEL_REVOLUTIONS += int(revs_inc)
-            if WHEEL_REVOLUTIONS > 0xFFFFFFFF:
-                WHEEL_REVOLUTIONS = 0
-                
-            LAST_WHEEL_TIME_UNIT += int(interval * 1024)
-            if LAST_WHEEL_TIME_UNIT > 0xFFFF:
-                LAST_WHEEL_TIME_UNIT %= 0x10000
-                
-            # 1. Bikin payload byte data barunya
-            flags = 0x01
-            payload = bytes([
-                flags,
-                WHEEL_REVOLUTIONS & 0xFF, 
-                (WHEEL_REVOLUTIONS >> 8) & 0xFF, 
-                (WHEEL_REVOLUTIONS >> 16) & 0xFF, 
-                (WHEEL_REVOLUTIONS >> 24) & 0xFF,
-                LAST_WHEEL_TIME_UNIT & 0xFF, 
-                (LAST_WHEEL_TIME_UNIT >> 8) & 0xFF
-            ])
+            # Akumulasikan ke float dulu
+            rev_accumulator += revs_inc
             
-            # 2. Oper payload-nya langsung ke changed(payload) !
-            service.csc_measurement.changed(payload)
+            # 3. Jika akumulasi sudah mencapai 1 putaran atau lebih
+            if rev_accumulator >= 1.0:
+                full_revs = int(rev_accumulator)  # Ambil jumlah putaran utuh
+                rev_accumulator -= full_revs       # Simpan sisa pecahannya
+                
+                # Tambah total revolusi
+                WHEEL_REVOLUTIONS = (WHEEL_REVOLUTIONS + full_revs) & 0xFFFFFFFF
+                
+                # Update waktu event berdasarkan durasi aktual dari putaran roda tersebut
+                # 1 putaran penuh memakan waktu (WHEEL_CIRCUMFERENCE / speed_mps) detik
+                time_taken_seconds = (full_revs * WHEEL_CIRCUMFERENCE_METERS) / speed_mps
+                time_units_inc = int(time_taken_seconds * 1024.0)
+                
+                LAST_WHEEL_TIME_UNIT = (LAST_WHEEL_TIME_UNIT + time_units_inc) & 0xFFFF
+                
+                # 4. Kirim notification byte ke Flutter
+                flags = 0x01
+                payload = bytes([
+                    flags,
+                    WHEEL_REVOLUTIONS & 0xFF, 
+                    (WHEEL_REVOLUTIONS >> 8) & 0xFF, 
+                    (WHEEL_REVOLUTIONS >> 16) & 0xFF, 
+                    (WHEEL_REVOLUTIONS >> 24) & 0xFF,
+                    LAST_WHEEL_TIME_UNIT & 0xFF, 
+                    (LAST_WHEEL_TIME_UNIT >> 8) & 0xFF
+                ])
+                
+                service.csc_measurement.changed(payload)
 
 async def keyboard_control():
     """ Mengubah kecepatan simulasi lewat Terminal secara live """
@@ -82,10 +86,9 @@ async def keyboard_control():
     loop = asyncio.get_event_loop()
     
     print("\n--- KONTROL SIMULATOR SPEED ---")
-    print("Ketik angka kecepatan (misal: 15, 25, 40, atau 0) lalu Enter:")
+    print("Ketik angka kecepatan (misal: 5, 12.5, 25, 30, atau 0) lalu Enter:")
     
     while True:
-        # Read input asynchronously biar gak nge-block BLE
         user_input = await loop.run_in_executor(None, sys.stdin.readline)
         try:
             val = float(user_input.strip())
@@ -116,7 +119,6 @@ async def main():
     print("Default Speed: 20.0 km/h")
     print("==========================================================")
 
-    # Jalankan simulasi putaran roda dan listener keyboard secara paralel
     asyncio.create_task(update_simulation_data(csc_service))
     asyncio.create_task(keyboard_control())
 

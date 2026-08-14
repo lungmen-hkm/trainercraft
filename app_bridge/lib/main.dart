@@ -267,7 +267,7 @@ _isScanningBle
                   "${_bleService.currentSpeedKmh.toStringAsFixed(1)} km/h",
                   style: const TextStyle(
                     color: Colors.blueAccent, 
-                    fontSize: 22, 
+                    fontSize: 11, 
                     fontWeight: FontWeight.bold
                   ),
                 ),
@@ -288,7 +288,7 @@ _isScanningBle
               ],
             )
         ]),
-
+        ),
           // 4. PEMILIH UKURAN BAN (Hijau/Tombol)
           _buildActionButton(
             icon: Icons.adjust,
@@ -298,7 +298,7 @@ _isScanningBle
               _showTireSizeDialog(context);
             },
           ),
-
+        
           // 5. PEMERIKSA INSTALASI MC (Kuning/Status)
           _buildStatusCard(
             icon: Icons.checklist,
@@ -316,7 +316,7 @@ _isScanningBle
               _launchMinecraft();
             },
           ),
-      )
+      
       ],
       ),
     ),
@@ -402,7 +402,7 @@ Widget _buildStatusCardWithWidget({required IconData icon, required String title
           Icon(icon, color: Colors.amber, size: 24),
           const SizedBox(height: 4),
           Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-          const SizedBox(height: 6),
+          const SizedBox(height: 2),
           // Widget custom (loading bar + teks scanning) bakal ngebakar di sini
           widget 
         ],
