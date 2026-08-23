@@ -1,38 +1,58 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:shelf/shelf.dart';
-import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:shelf_router/shelf_router.dart';
+// import 'package:shelf/shelf.dart';
+// import 'package:shelf/shelf_io.dart' as shelf_io;
+// import 'package:shelf_router/shelf_router.dart';
 
 class ServerService {
   HttpServer? _server;
-  Future<void> startServer(double Function() getSpeedCallback) async {
-    final router = Router();
-    router.get('/speed', (Request request) {
-      final speed = getSpeedCallback(); 
-      
-      final responseBody = jsonEncode({
-        'speed': double.parse(speed.toStringAsFixed(2)),
-        'status': 'active'
+  WebSocket? _clientSocket;
+
+  Future<void> startServer(double Function() getSpeed) async {
+    try {
+      // Bind ke InternetAddress.anyIPv4 (0.0.0.0) biar bisa diakses via IP Lokal
+      _server = await HttpServer.bind(InternetAddress.anyIPv4, 8000);
+      print("WebSocket Server running on port 8000");
+
+      _server!.transform(WebSocketTransformer()).listen((WebSocket socket) {
+        print("MCPE Connected via WebSocket!");
+        _clientSocket = socket;
+
+        // Kirim data speed tiap 200ms
+        _startSpeedStream(getSpeed);
       });
-
-      return Response.ok(
-        responseBody,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*', 
-        },
-      );
-    });
-
-    _server = await shelf_io.serve(router, InternetAddress.loopbackIPv4, 8080);
-    print('Server Trainercraft jalan di: ${_server!.address.address}:${_server!.port}');
-  }
-  
-  Future<void> stopServer() async {
-    if (_server != null) {
-      await _server!.close(force: true);
-      print('Server Trainercraft dimatikan.');
+    } catch (e) {
+      print("Error starting server: $e");
     }
+  }
+
+  void _startSpeedStream(double Function() getSpeed) {
+    Stream.periodic(const Duration(milliseconds: 200)).listen((_) {
+      if (_clientSocket != null && _clientSocket!.readyState == WebSocket.open) {
+        double currentSpeed = getSpeed();
+
+        // Standard MCPE Bedrock JSON Command Protocol
+        Map<String, dynamic> commandPayload = {
+          "header": {
+          "version": 1,
+          "requestId": "00000000-0000-0000-0000-000000000000",
+          "messagePurpose": "commandRequest"
+        },
+        "body": {
+          "version": 1,
+          "commandLine": "scriptevent trainercraft:set_speed ${currentSpeed.toStringAsFixed(1)}"
+        }
+};
+
+        _clientSocket!.add(jsonEncode(commandPayload));
+      }
+    });
+  }
+
+  Future<void> stopServer() async {
+    await _clientSocket?.close();
+    await _server?.close();
+    _clientSocket = null;
+    _server = null;
   }
 }

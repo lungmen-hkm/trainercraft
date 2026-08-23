@@ -2,24 +2,24 @@
   "format_version": 2,
   "header": {
     "description": "TrainerCraft BLE Speed Bridge Add-on",
-    "name": "TrainerCraft BP",
+    "name": "TrainerCraft BP BETA-2",
     "uuid": "268af4b7-60b0-45d6-9bb2-5b766ec2ec3d",
-    "version": [1, 0, 0],
+    "version": [1, 0, 2],
     "min_engine_version": [1, 20, 0]
   },
   "modules": [
     {
       "description": "Behavior Pack Module",
       "type": "data",
-      "uuid": "268af4b7-60b0-45d6-9bb2-5b766ec2ec3d",
-      "version": [1, 0, 0]
+      "uuid": "65f36451-0b79-42c9-b334-207d4b1ad24b",
+      "version": [1, 0, 2]
     },
     {
       "description": "Script API Module",
       "type": "script",
       "language": "javascript",
-      "uuid": "268af4b7-60b0-45d6-9bb2-5b766ec2ec3d",
-      "version": [1, 0, 0],
+      "uuid": "de50e3a9-c5f4-4f2e-9da6-207d4b1ad24b",
+      "version": [1, 0, 2],
       "entry": "scripts/main.js"
     }
   ],
