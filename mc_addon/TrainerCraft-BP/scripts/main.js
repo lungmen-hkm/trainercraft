@@ -1,39 +1,49 @@
-import { world, system } from "@minecraft/server";
-import { http, HttpRequestMethod } from "@minecraft/server-net";
+import { world, EntityComponentTypes } from "@minecraft/server";
 
-const SERVER_URL = "http://127.0.0.1:8080/"; 
+// Variabel global penampung speed dari Flutter (km/h)
+let currentTrainerSpeedKmh = 0.0;
 
-system.runInterval(async () => {
-    const players = world.getAllPlayers();
-    if (players.length === 0) return;
-    const player = players[0];
+// Konversi Kecepatan Real-World (km/h) ke Movement Value Minecraft Bedrock
+// 10 km/h di dunia nyata setara ~0.15 movement speed di MCPE
+function kmhToMcMovement(speedKmh) {
+  if (speedKmh <= 0.1) return 0.0;
+  // Formula scaling linear (bisa di-tweak sesuai kenyamanan gowes)
+  let baseMovement = (speedKmh / 100.0) * 1.2; 
+  return Math.min(baseMovement, 1.5); // Cap maksimal biar gak ngebug teleport
+}
 
-    try {
-        // Request GET ke server shelf
-        const response = await http.request({
-            uri: SERVER_URL,
-            method: HttpRequestMethod.Get
-        });
-
-        if (response.status === 200) {
-            const speedKmh = parseFloat(response.body);
-            
-            // Kalau lu gowes di atas 3 km/jam, paksa karakter maju relatif ke depan
-            if (speedKmh > 3.0) {
-                // Rumus kalkulasi kalkulasi kecepatan maju (^ ^ ^teleport_ke_depan)
-                const forwardSpeed = (speedKmh / 25).toFixed(2);
-                
-                // Eksekusi command teleportasi tipis-tipis biar jalannya smooth
-                player.runCommandAsync(`tp ^ ^ ^${forwardSpeed}`);
-                
-                // Tampilin action bar estetik di atas hotbar biar lu tau speed gowes lu
-                player.onScreenDisplay.setActionBar(`§aGowes Speed: §f${speedKmh.toFixed(1)} km/h`);
-            } else {
-                // Pas lu brenti ngedayung
-                player.onScreenDisplay.setActionBar(`§cNgaso dulu... Speed: 0.0 km/h`);
-            }
+// Tick Loop Minecraft (Jalan 20 FPS di dalam game)
+world.afterEvents.worldInitialize.subscribe(() => {
+  system.runInterval(() => {
+    // Cari semua player di dunia game
+    for (const player of world.getAllPlayers()) {
+      // Cek apakah player lagi menunggangi sesuatu
+      const ridingComp = player.getComponent(EntityComponentTypes.Riding);
+      
+      if (ridingComp && ridingComp.entityToRide) {
+        const vehicle = ridingComp.entityToRide;
+        
+        // Cek apakah kendaraan tersebut adalah 'trainercraft:bike'
+        if (vehicle.typeId === "trainercraft:bike") {
+          const movementComp = vehicle.getComponent(EntityComponentTypes.Movement);
+          
+          if (movementComp) {
+            // Ubah kecepatan sepeda secara live!
+            const mcSpeed = kmhToMcMovement(currentTrainerSpeedKmh);
+            movementComp.setCurrentValue(mcSpeed);
+          }
         }
-    } catch (error) {
-        // Jangan tampilin error message di chat biar gak nyepam pas nyari koneksi
+      }
     }
-}, 4); // Dilempar tiap 4 tick (artinya dalam 1 detik ada 5 kali pengecekan, responsif banget!)
+  }, 2); // Update tiap 2 tick (0.1 detik)
+});
+
+// Listener pesan WebSocket dari Flutter App Bridge
+system.afterEvents.scriptEventReceive.subscribe((event) => {
+  if (event.id === "trainercraft:set_speed") {
+    const speedVal = parseFloat(event.message);
+    if (!isNaN(speedVal)) {
+      currentTrainerSpeedKmh = speedVal;
+    }
+  }
+});

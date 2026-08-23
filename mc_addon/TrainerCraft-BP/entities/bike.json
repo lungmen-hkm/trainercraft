@@ -1,0 +1,38 @@
+{
+  "format_version": "1.20.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "trainercraft:bike",
+      "is_spawnable": true,
+      "is_summonable": true
+    },
+    "components": {
+      "minecraft:physics": {},
+      "minecraft:type_family": {
+        "family": ["bike", "inanimate"]
+      },
+      "minecraft:health": {
+        "value": 1,
+        "max": 1
+      },
+      "minecraft:movement": {
+        "value": 0.0
+      },
+      "minecraft:navigation.walk": {
+        "can_path_over_water": false,
+        "avoid_water": true
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:rideable": {
+        "seat_count": 1,
+        "family_types": ["player"],
+        "seats": [
+          {
+            "position": [0.0, 0.5, 0.0]
+          }
+        ]
+      },
+      "minecraft:input_ground_controlled": {}
+    }
+  }
+}
