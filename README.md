@@ -42,7 +42,7 @@ Data pipeline from hardware sensor to game runtime:
 
 ## Prerequisites & Environment
 
-* **Development OS**: Fedora Linux
+* **Development OS**: Fedora Linux, Windows, and Arch Linux
 * **Target Runtime**: Android
 * **SDKs & Runtimes**:
 * Flutter SDK
@@ -109,7 +109,46 @@ TrainerCraft is architected with a decoupled engine design. The **Flutter App Br
 
 ---
 
-## 🗺️ Roadmap
+Ini bagian **"Contributing Guide"** dalam bahasa Inggris buat ditempel ke `README.md` lu. Tinggal lu selipin di atas section **License**:
+
+---
+
+## 🤝 Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make to **TrainerCraft** are **greatly appreciated**!
+
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag `enhancement` or `bug`.
+
+### How to Contribute
+
+1. **Fork the Project**
+2. **Create your Feature Branch**
+```bash
+git checkout -b feature/AmazingFeature
+```
+3. **Commit your Changes**
+```bash
+git commit -m 'Add some AmazingFeature'
+```
+
+4. **Push to the Branch**
+```bash
+git push origin feature/AmazingFeature
+```
+5. **Open a Pull Request**
+
+### Key Areas Needing Contribution
+
+* **Game Adapters**: Help us build bridges/adapters for other games (e.g., GTA V, Roblox, Assetto Corsa, ETS2).
+* **Flutter UI/UX**: Improve the mobile dashboard, adding telemetry graphs, speedometers, and BLE connection management.
+* **FTMS Support**: Help implement FE-C / FTMS (Fitness Machine Service) profiles for two-way resistance control on smart trainers.
+* **ANT+ Native Integration**: Implement Flutter Platform Channels (MethodChannel) for Android's native ANT+ background service and USB-OTG dongles.
+* **Cyclocomputer Connection**: Build custom parsers for Garmin/Wahoo telemetry streams over local Wi-Fi/UDP.
+```
+
+---
+
+## Roadmap
 
 * [x] BLE CSC Server simulation via Python `bluez-peripheral`.
 * [x] Low-speed precision handling ($0\text{–}30\text{ km/h}$) via float accumulation.
@@ -121,6 +160,6 @@ TrainerCraft is architected with a decoupled engine design. The **Flutter App Br
 
 ---
 
-## 📄 License
+## License
 
 Distributed under the GPL-3.0 License. See [LICENSE](https://github.com/lungmen-hkm/trainercraft/LICENSE).
