@@ -109,10 +109,6 @@ TrainerCraft is architected with a decoupled engine design. The **Flutter App Br
 
 ---
 
-Ini bagian **"Contributing Guide"** dalam bahasa Inggris buat ditempel ke `README.md` lu. Tinggal lu selipin di atas section **License**:
-
----
-
 ## Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make to **TrainerCraft** are **greatly appreciated**!
