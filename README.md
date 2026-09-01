@@ -113,7 +113,7 @@ Ini bagian **"Contributing Guide"** dalam bahasa Inggris buat ditempel ke `READM
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make to **TrainerCraft** are **greatly appreciated**!
 
@@ -144,7 +144,6 @@ git push origin feature/AmazingFeature
 * **FTMS Support**: Help implement FE-C / FTMS (Fitness Machine Service) profiles for two-way resistance control on smart trainers.
 * **ANT+ Native Integration**: Implement Flutter Platform Channels (MethodChannel) for Android's native ANT+ background service and USB-OTG dongles.
 * **Cyclocomputer Connection**: Build custom parsers for Garmin/Wahoo telemetry streams over local Wi-Fi/UDP.
-```
 
 ---
 
