@@ -48,10 +48,7 @@ Data pipeline from hardware sensor to game runtime:
 * Flutter SDK
 * JDK 17 / 21
 * Python 3.10+ (for `bluez-peripheral` BLE testing)
-
-
 * **Target Engine**: Minecraft Bedrock Edition (Script API `@minecraft/server` enabled)
-
 ---
 
 ## Getting Started
@@ -63,7 +60,6 @@ To debug without physical hardware, spin up the GATT server on your development 
 ```bash
 pip install bluez-peripheral
 python debug/debug-csc.py
-
 ```
 
 ### 2. Build & Launch the Flutter App Bridge
@@ -73,26 +69,19 @@ Deploy the bridge app to your mobile device:
 ```bash
 flutter clean
 flutter run
-
 ```
 
 ### 3. Install the Minecraft Bedrock Add-on
 
-1. Copy the `TrainerCraft_BP` directory into the local Behavior Packs folder:
-`/sdcard/Android/data/com.mojang.minecraftpe/files/games/com.mojang/behavior_packs/`
+1. Go to the 
 2. Open **World Settings** in Minecraft Bedrock:
 * Enable **Behavior Pack: TrainerCraft BP**.
 * Toggle **Beta APIs / Experimental Features** to **ON**.
-
-
 3. In-game, spawn the vehicle and establish the WebSocket handshake:
 ```text
 /summon trainercraft:bike
 /wsserver localhost:8000
-
 ```
-
-
 
 ---
 
@@ -128,6 +117,7 @@ TrainerCraft is architected with a decoupled engine design. The **Flutter App Br
 * [x] Custom entity `trainercraft:bike` with Script API v1.8+ for Minecraft Bedrock.
 * [ ] In-app telemetry dashboard (Speedometer, Cadence, and Battery level).
 * [ ] Interactive Trainer Resistance Control via FTMS Profile.
+* [ ] Port another game.
 
 ---
 
